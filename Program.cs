@@ -14,14 +14,14 @@ namespace GameOfLife
             int size = 0;
             while (true)
             {
-                Console.Write("Please enter the size of the field (minimum 5, maximum 40): ");
-                if (int.TryParse(Console.ReadLine(), out size) && size >= 5 && size <= 40)
+                Console.Write($"Please enter the size of the field (minimum {Constants.MinFieldSize}, maximum {Constants.MaxFieldSize}): ");
+                if (int.TryParse(Console.ReadLine(), out size) && size >= Constants.MinFieldSize && size <= Constants.MaxFieldSize)
                 {
                     break;
                 }
                 else
                 {
-                    Console.WriteLine("Invalid input. Please enter a valid positive integer between 5 and 40.");
+                    Console.WriteLine($"Invalid input. Please enter a valid positive integer between {Constants.MinFieldSize} and {Constants.MaxFieldSize}.");
                 }
             }
 
@@ -33,7 +33,7 @@ namespace GameOfLife
                 Console.Clear();
                 PrintField(field);
                 field = UpdateField(field);
-                Thread.Sleep(1000);
+                Thread.Sleep(Constants.GameUpdateSpeed);
             }
         }
 
@@ -67,7 +67,7 @@ namespace GameOfLife
             {
                 for (int j = 0; j < size; j++)
                 {
-                    Console.Write(field[i, j] ? "😊" : "💀");
+                    Console.Write(field[i, j] ? Constants.LivingCell : Constants.DeadCell);
                 }
                 Console.WriteLine();
             }
