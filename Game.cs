@@ -1,6 +1,6 @@
 ﻿namespace GameOfLife
 {
-    public class Game
+    public class Game : IGame
     {
         private bool[,] field;
         private int size;

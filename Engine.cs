@@ -1,14 +1,14 @@
 ﻿namespace GameOfLife
 {
-    public class Engine
+    public class Engine : IEngine
     {
-        private readonly Game game;
+        private readonly IGame game;
 
         /// <summary>
         /// Initializes a new instance of the Engine class with the specified game.
         /// </summary>
         /// <param name="game">The game instance to manage.</param>
-        public Engine(Game game)
+        public Engine(IGame game)
         {
             this.game = game;
         }

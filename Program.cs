@@ -13,8 +13,8 @@ namespace GameOfLife
 
             int size = GetFieldSize();
 
-            Game game = new Game(size);
-            Engine engine = new Engine(game);
+            IGame game = new Game(size);
+            IEngine engine = new Engine(game);
             engine.Start(Constants.GameUpdateSpeed);
         }
 
