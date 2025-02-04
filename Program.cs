@@ -6,10 +6,10 @@ namespace GameOfLife
     {
         static void Main(string[] args)
         {
-            // setting the console output encoding to UTF-8 to display emojis correctly
-            Console.OutputEncoding = Encoding.UTF8;
+            // sets the console output encoding to UTF-8 to display emojis correctly
+            Constants.SetConsoleEncoding();
 
-            Console.WriteLine("Welcome to Conway's Game of Life!");
+            Console.WriteLine(Constants.WelcomeMessage);
 
             int size = GetFieldSize();
 

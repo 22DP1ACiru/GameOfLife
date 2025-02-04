@@ -1,4 +1,6 @@
-﻿namespace GameOfLife
+﻿using System.Text;
+
+namespace GameOfLife
 {
     public static class Constants
     {
@@ -26,5 +28,18 @@
         /// The speed at which the game updates, in milliseconds.
         /// </summary>
         public const int GameUpdateSpeed = 1000;
+
+        /// <summary>
+        /// The welcome message for the game.
+        /// </summary>
+        public const string WelcomeMessage = "Welcome to Conway's Game of Life!";
+
+        /// <summary>
+        /// Sets the console output encoding to UTF-8 to display emojis correctly.
+        /// </summary>
+        public static void SetConsoleEncoding()
+        {
+            Console.OutputEncoding = Encoding.UTF8;
+        }
     }
 }
