@@ -1,4 +1,6 @@
-﻿namespace GameOfLife
+﻿using Newtonsoft.Json;
+
+namespace GameOfLife
 {
     public class Game : IGame
     {
@@ -102,6 +104,52 @@
             }
 
             return liveNeighbors;
+        }
+
+        /// <summary>
+        /// Saves the current game state to a JSON file.
+        /// </summary>
+        /// <param name="fileName">The name of the save file (without extension).</param>
+        /// <param name="iterationCount">The current iteration count.</param>
+        public void SaveGame(string fileName, int iterationCount)
+        {
+            // Ensure the "saves" directory exists
+            Directory.CreateDirectory("saves");
+
+            var saveData = new SaveData
+            {
+                Size = size,
+                Field = field,
+                IterationCount = iterationCount
+            };
+
+            // Generate the file name with the current time and date
+            string filePath = Path.Combine("saves", $"{fileName}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+
+            // Serialize and save to JSON
+            string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
+            File.WriteAllText(filePath, json);
+
+            Console.WriteLine($"Game saved successfully to {filePath}!");
+        }
+
+        /// <summary>
+        /// Loads a game state from a JSON file.
+        /// </summary>
+        /// <param name="filePath">The path to the save file.</param>
+        /// <returns>The iteration count from the save file.</returns>
+        public int LoadGame(string filePath)
+        {
+            // Read and deserialize the JSON file
+            string json = File.ReadAllText(filePath);
+            var saveData = JsonConvert.DeserializeObject<SaveData>(json);
+
+            // Update the game state
+            size = saveData.Size;
+            field = saveData.Field;
+
+            // Return the iteration count
+            return saveData.IterationCount;
         }
     }
 }

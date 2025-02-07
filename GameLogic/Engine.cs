@@ -10,11 +10,10 @@
         /// Initializes a new instance of the Engine class with the specified game.
         /// </summary>
         /// <param name="game">The game instance to manage.</param>
-        public Engine(IGame game)
+        public Engine(IGame game, int instanceIterationCount = 0)
         {
             this.game = game;
-            this.iterationCount = 0;
-            this.livingCellCount = 0;
+            this.iterationCount = instanceIterationCount; // Set to 0 by default for new games
         }
 
         /// <summary>
@@ -28,6 +27,24 @@
                 Console.Clear();
                 UpdateCounts();
                 PrintField();
+                Console.WriteLine("Press 'S' to save the game, 'Q' to quit");
+
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true).Key;
+                    if (key == ConsoleKey.S)
+                    {
+                        Console.Clear();
+                        SaveGame();
+                    }
+                    else if (key == ConsoleKey.Q)
+                    {
+                        Console.Clear();
+                        Console.WriteLine("Quitting the game...");
+                        return;
+                    }
+                }
+
                 game.UpdateField();
                 Thread.Sleep(updateSpeed);
             }
@@ -75,6 +92,24 @@
                         livingCellCount++;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Saves the current game state to a JSON file.
+        /// </summary>
+        public void SaveGame()
+        {
+            Console.Write("Enter a name for the save file: ");
+            string fileName = Console.ReadLine();
+
+            if (!string.IsNullOrWhiteSpace(fileName))
+            {
+                game.SaveGame(fileName, iterationCount);
+            }
+            else
+            {
+                Console.WriteLine("Invalid file name. Save canceled.");
             }
         }
     }

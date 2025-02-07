@@ -1,21 +1,83 @@
-﻿using System.Text;
-
-namespace GameOfLife
+﻿namespace GameOfLife
 {
     class Program
     {
         static void Main(string[] args)
         {
-            // sets the console output encoding to UTF-8 to display emojis correctly
             Constants.SetConsoleEncoding();
-
             Console.WriteLine(Constants.WelcomeMessage);
 
-            int size = GetFieldSize();
+            while (true)
+            {
+                Console.WriteLine("1. Start a new game");
+                Console.WriteLine("2. Load a saved game");
+                Console.WriteLine("3. Quit");
+                Console.Write("Choose an option: ");
+                string choice = Console.ReadLine();
 
-            IGame game = new Game(size);
-            IEngine engine = new Engine(game);
-            engine.Start(Constants.GameUpdateSpeed);
+                if (choice == "1")
+                {
+                    Console.Clear();
+                    int size = GetFieldSize();
+                    IGame game = new Game(size);
+                    IEngine engine = new Engine(game);
+                    engine.Start(Constants.GameUpdateSpeed);
+                }
+                else if (choice == "2")
+                {
+                    Console.Clear();
+                    LoadSavedGame();
+                }
+                else if (choice == "3")
+                {
+                    break;
+                }
+                else
+                {
+                    Console.Clear();
+                    Console.WriteLine("Invalid choice. Please try again.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Prompts the user to select a saved game from the "saves/" folder.
+        /// </summary>
+        private static void LoadSavedGame()
+        {
+            // Ensure the "saves" directory exists
+            Directory.CreateDirectory("saves");
+
+            // Get all .json files in the "saves" folder
+            string[] saveFiles = Directory.GetFiles("saves", "*.json");
+
+            if (saveFiles.Length == 0)
+            {
+                Console.WriteLine("No saved games found.");
+                return;
+            }
+
+            // List all save files
+            Console.WriteLine("Saved games:");
+            for (int i = 0; i < saveFiles.Length; i++)
+            {
+                Console.WriteLine($"{i + 1}. {Path.GetFileName(saveFiles[i])}");
+            }
+
+            // Prompt the user to select a save file
+            Console.Write("Select a save file by number: ");
+            if (int.TryParse(Console.ReadLine(), out int selectedIndex) && selectedIndex > 0 && selectedIndex <= saveFiles.Length)
+            {
+                string filePath = saveFiles[selectedIndex - 1];
+                IGame game = new Game(1); // Temporary size to be overwritten by LoadGame later
+                int iterationCount = game.LoadGame(filePath); // Load the game and get the iteration count
+                IEngine engine = new Engine(game, iterationCount);
+                engine.Start(Constants.GameUpdateSpeed);
+            }
+            else
+            {
+                Console.WriteLine("Invalid selection.");
+            }
         }
 
         /// <summary>
