@@ -113,8 +113,8 @@ namespace GameOfLife
         /// <param name="iterationCount">The current iteration count.</param>
         public void SaveGame(string fileName, int iterationCount)
         {
-            // Ensure the "saves" directory exists
-            Directory.CreateDirectory("saves");
+            // Ensure the save directory exists (specified in Constants)
+            Directory.CreateDirectory(Constants.SaveFolder);
 
             var saveData = new SaveData
             {
@@ -123,8 +123,8 @@ namespace GameOfLife
                 IterationCount = iterationCount
             };
 
-            // Generate the file name with the current time and date
-            string filePath = Path.Combine("saves", $"{fileName}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+            // Generate the file name using file format in Constants
+            string filePath = Path.Combine(Constants.SaveFolder, string.Format(Constants.SaveFileNameFormat, fileName, DateTime.Now));
 
             // Serialize and save to JSON
             string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);

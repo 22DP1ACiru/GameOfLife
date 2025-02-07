@@ -45,11 +45,11 @@
         /// </summary>
         private static void LoadSavedGame()
         {
-            // Ensure the "saves" directory exists
-            Directory.CreateDirectory("saves");
+            // Ensure the save directory exists (specified in Constants)
+            Directory.CreateDirectory(Constants.SaveFolder);
 
             // Get all .json files in the "saves" folder
-            string[] saveFiles = Directory.GetFiles("saves", "*.json");
+            string[] saveFiles = Directory.GetFiles(Constants.SaveFolder, "*.json");
 
             if (saveFiles.Length == 0)
             {
