@@ -4,6 +4,7 @@ namespace GameOfLife
 {
     public class Game : IGame
     {
+        private readonly GameFileManager fileManager = new GameFileManager();
         private bool[,] field;
         private int size;
 
@@ -113,24 +114,8 @@ namespace GameOfLife
         /// <param name="iterationCount">The current iteration count.</param>
         public void SaveGame(string fileName, int iterationCount)
         {
-            // Ensure the save directory exists (specified in Constants)
-            Directory.CreateDirectory(Constants.SaveFolder);
-
-            var saveData = new SaveData
-            {
-                Size = size,
-                Field = field,
-                IterationCount = iterationCount
-            };
-
-            // Generate the file name using file format in Constants
-            string filePath = Path.Combine(Constants.SaveFolder, string.Format(Constants.SaveFileNameFormat, fileName, DateTime.Now));
-
-            // Serialize and save to JSON
-            string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
-            File.WriteAllText(filePath, json);
-
-            Console.WriteLine($"Game saved successfully to {filePath}!");
+            // Save the game state to file using GameFileManager
+            fileManager.SaveGame(fileName, iterationCount, size, field);
         }
 
         /// <summary>
@@ -140,9 +125,8 @@ namespace GameOfLife
         /// <returns>The iteration count from the save file.</returns>
         public int LoadGame(string filePath)
         {
-            // Read and deserialize the JSON file
-            string json = File.ReadAllText(filePath);
-            var saveData = JsonConvert.DeserializeObject<SaveData>(json);
+            // Load the game state from file using GameFileManager
+            var saveData = fileManager.LoadGame(filePath);
 
             // Update the game state
             size = saveData.Size;
