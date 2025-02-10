@@ -34,9 +34,24 @@ namespace GameOfLife
         /// </summary>
         public SaveData LoadGame(string filePath)
         {
-            // Read and return deserialized JSON file
-            string json = File.ReadAllText(filePath);
-            return JsonConvert.DeserializeObject<SaveData>(json);
+            try
+            {
+                // Read and return deserialized JSON file
+                string json = File.ReadAllText(filePath);
+                return JsonConvert.DeserializeObject<SaveData>(json);
+            }
+            catch (FileNotFoundException)
+            {
+                // Throws if file is not found (i.e. removed right before selection in load screen)
+                Console.WriteLine("Error: Save file not found.");
+                throw;
+            }
+            catch (JsonException)
+            {
+                // Throws if file is not valid JSON (corrupt or tampered with)
+                Console.WriteLine("Error: Invalid save file format.");
+                throw;
+            }
         }
     }
 }
