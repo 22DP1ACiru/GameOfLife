@@ -108,17 +108,6 @@ namespace GameOfLife
         }
 
         /// <summary>
-        /// Saves the current game state to a JSON file.
-        /// </summary>
-        /// <param name="fileName">The name of the save file (without extension).</param>
-        /// <param name="iterationCount">The current iteration count.</param>
-        public void SaveGame(string fileName, int iterationCount)
-        {
-            // Save the game state to file using GameFileManager
-            fileManager.SaveGame(fileName, iterationCount, size, field);
-        }
-
-        /// <summary>
         /// Loads a game state from a JSON file.
         /// </summary>
         /// <param name="filePath">The path to the save file.</param>

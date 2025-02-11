@@ -62,7 +62,7 @@
             {
                 for (int j = 0; j < size; j++)
                 {
-                    Console.Write(field[i, j] ? Constants.LivingCell : Constants.DeadCell);
+                    Console.Write(field[i, j] ? DisplayConstants.LivingCell : DisplayConstants.DeadCell);
                 }
                 Console.WriteLine();
             }
@@ -105,7 +105,8 @@
 
             if (!string.IsNullOrWhiteSpace(fileName))
             {
-                game.SaveGame(fileName, iterationCount);
+                var fileManager = new GameFileManager();
+                fileManager.SaveGame(fileName, iterationCount, game.Size, game.Field);
             }
             else
             {

@@ -9,24 +9,31 @@ namespace GameOfLife
         /// </summary>
         public void SaveGame(string fileName, int iterationCount, int size, bool[,] field)
         {
-            // Ensure the save directory exists (specified in Constants)
-            Directory.CreateDirectory(Constants.SaveFolder);
-
-            var saveData = new SaveData
+            try
             {
-                Size = size,
-                Field = field,
-                IterationCount = iterationCount
-            };
+                // Ensure the save directory exists (specified in Constants)
+                Directory.CreateDirectory(FileConstants.SaveFolder);
 
-            // Generate the file name using file format in Constants
-            string filePath = Path.Combine(Constants.SaveFolder, string.Format(Constants.SaveFileNameFormat, fileName, DateTime.Now));
+                var saveData = new SaveData
+                {
+                    Size = size,
+                    Field = field,
+                    IterationCount = iterationCount
+                };
 
-            // Serialize and save to JSON
-            string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
-            File.WriteAllText(filePath, json);
+                // Generate the file name using file format in Constants
+                string filePath = Path.Combine(FileConstants.SaveFolder, string.Format(FileConstants.SaveFileNameFormat, fileName, DateTime.Now));
 
-            Console.WriteLine($"Game saved successfully to {filePath}!");
+                // Serialize and save to JSON
+                string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
+                File.WriteAllText(filePath, json);
+
+                Console.WriteLine($"Game saved successfully to {filePath}!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: Failed to save the game. {ex.Message}");
+            }
         }
 
         /// <summary>
