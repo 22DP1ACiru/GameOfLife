@@ -1,7 +1,10 @@
-﻿namespace GameOfLife
+﻿using Newtonsoft.Json;
+
+namespace GameOfLife
 {
     public class Game : IGame
     {
+        private readonly GameFileManager fileManager = new GameFileManager();
         private bool[,] field;
         private int size;
 
@@ -102,6 +105,24 @@
             }
 
             return liveNeighbors;
+        }
+
+        /// <summary>
+        /// Loads a game state from a JSON file.
+        /// </summary>
+        /// <param name="filePath">The path to the save file.</param>
+        /// <returns>The iteration count from the save file.</returns>
+        public int LoadGame(string filePath)
+        {
+            // Load the game state from file using GameFileManager
+            var saveData = fileManager.LoadGame(filePath);
+
+            // Update the game state
+            size = saveData.Size;
+            field = saveData.Field;
+
+            // Return the iteration count
+            return saveData.IterationCount;
         }
     }
 }
