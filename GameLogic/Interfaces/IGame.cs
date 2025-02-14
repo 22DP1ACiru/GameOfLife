@@ -17,5 +17,12 @@
         /// </summary>
         /// <returns>A new 2D boolean array representing the updated game field.</returns>
         bool[,] UpdateField();
+
+        /// <summary>
+        /// Loads a game state from a JSON file.
+        /// </summary>
+        /// <param name="filePath">The path to the save file.</param>
+        /// <returns>The iteration count from the save file.</returns>
+        int LoadGame(string filePath);
     }
 }
