@@ -20,6 +20,16 @@ namespace GameOfLife
         public const int GameUpdateSpeed = 1000;
 
         /// <summary>
+        /// The speed at which parallel games update, in milliseconds.
+        /// </summary>
+        public const int ParallelGameUpdateSpeed = 1500;
+
+        /// <summary>
+        /// The speed at which multi-game display updates, in milliseconds.
+        /// </summary>
+        public const int MultiGameUpdateSpeed = 800;
+
+        /// <summary>
         /// Sets the console output encoding to UTF-8 to display emojis correctly.
         /// </summary>
         public static void SetConsoleEncoding()

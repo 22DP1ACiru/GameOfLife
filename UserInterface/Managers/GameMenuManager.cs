@@ -1,12 +1,17 @@
-﻿namespace GameOfLife
+﻿using System;
+using System.IO;
+
+namespace GameOfLife
 {
     public class GameMenuManager
     {
         private readonly GameManager gameManager;
+        private readonly ConsoleRenderer renderer;
 
-        public GameMenuManager(GameManager gameManager)
+        public GameMenuManager(GameManager gameManager, ConsoleRenderer renderer)
         {
             this.gameManager = gameManager;
+            this.renderer = renderer;
         }
 
         public void ShowMainMenu()
@@ -16,6 +21,7 @@
                 Console.WriteLine(DisplayConstants.WelcomeMessage);
                 Console.WriteLine(DisplayConstants.StartNewGame);
                 Console.WriteLine(DisplayConstants.LoadSavedGame);
+                Console.WriteLine(DisplayConstants.StartParallelSimulation);
                 Console.WriteLine(DisplayConstants.Quit);
                 Console.Write(DisplayConstants.ChooseOption);
 
@@ -33,6 +39,11 @@
                         case DisplayConstants.MenuOption.LoadSavedGame:
                             Console.Clear();
                             LoadSavedGame();
+                            break;
+                        case DisplayConstants.MenuOption.StartParallelSimulation:
+                            Console.Clear();
+                            ParallelGameManager parallelManager = new ParallelGameManager(renderer);
+                            parallelManager.StartParallelSimulation();
                             break;
                         case DisplayConstants.MenuOption.Quit:
                             return;
