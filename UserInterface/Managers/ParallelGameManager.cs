@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -21,6 +22,10 @@ namespace GameOfLife
         private int multiGamePage = 0;
         private int multiGamesPerPage = 5;
         private bool inMultiGameView = false;
+        private bool isPaused = false;
+        private readonly object pauseLock = new object();
+        private long iterations = 0;
+        private long totalLivingCells = 0;
 
         /// <summary>
         /// Initializes a new instance of the ParallelGameManager class.
@@ -87,6 +92,21 @@ namespace GameOfLife
                                 inMultiGameView = false;
                             }
                             break;
+                        case ConsoleKey.Spacebar:
+                            lock (pauseLock)
+                            {
+                                isPaused = !isPaused;
+                                Console.WriteLine(isPaused ? DisplayConstants.AllGamesPaused : DisplayConstants.AllGamesResumed);
+                            }
+                            break;
+
+                        case ConsoleKey.S:
+                            SaveAllGames();
+                            break;
+
+                        case ConsoleKey.L:
+                            LoadAllGames();
+                            break;
                         case ConsoleKey.Q:
                             Console.Clear();
                             running = false;
@@ -107,6 +127,66 @@ namespace GameOfLife
             }
         }
 
+        private void SaveAllGames()
+        {
+            try
+            {
+                var saveData = new ParallelSaveData
+                {
+                    Games = games.Select(g => new GameState
+                    {
+                        Field = g.Field,
+                        IterationCount = g.IterationCount,
+                        Size = g.Field.GetLength(0)
+                    }).ToList()
+                };
+
+                string filePath = Path.Combine(FileConstants.SaveFolder,
+                    string.Format(FileConstants.ParallelSaveFileNameFormat, DateTime.Now));
+
+                string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
+                File.WriteAllText(filePath, json);
+
+                Console.WriteLine(DisplayConstants.AllGamesSaved);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving games: {ex.Message}");
+            }
+        }
+
+        private void LoadAllGames()
+        {
+            try
+            {
+                string[] saveFiles = Directory.GetFiles(FileConstants.SaveFolder, "parallel_save_*.json");
+                if (saveFiles.Length == 0)
+                {
+                    Console.WriteLine(DisplayConstants.NoSavedGamesFound);
+                    return;
+                }
+
+                // Load the most recent save
+                string filePath = saveFiles.OrderByDescending(f => f).First();
+                string json = File.ReadAllText(filePath);
+                var saveData = JsonConvert.DeserializeObject<ParallelSaveData>(json);
+
+                games.Clear();
+                foreach (var gameState in saveData.Games)
+                {
+                    IGame game = new Game(gameState.Size);
+                    IEngine engine = new Engine(game, gameState.IterationCount);
+                    games.Add(engine);
+                }
+
+                Console.WriteLine(DisplayConstants.AllGamesLoaded);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading games: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Runs the parallel simulation for all game instances.
         /// </summary>
@@ -115,11 +195,20 @@ namespace GameOfLife
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                // Update all games in parallel
-                Parallel.ForEach(games, game =>
+                lock (pauseLock)
                 {
-                    game.UpdateGameState();
-                });
+                    if (!isPaused)
+                    {
+                        totalLivingCells = 0;
+                        // Update all games in parallel if unpaused
+                        Parallel.ForEach(games, game =>
+                        {
+                            game.UpdateGameState();
+                            Interlocked.Add(ref totalLivingCells, game.LivingCellCount);
+                        });
+                        iterations++;
+                    }
+                }
 
                 // Only display current page if not in multi-game view
                 if (!inMultiGameView)
@@ -144,6 +233,9 @@ namespace GameOfLife
 
                 Console.WriteLine(DisplayConstants.ParallelGameHeaderFormat, currentPage + 1, (int)Math.Ceiling((double)totalGames / gamesPerPage));
                 Console.WriteLine(DisplayConstants.NavigationInstructions);
+                Console.WriteLine(DisplayConstants.ParallelGameControls);
+                Console.WriteLine();
+                Console.WriteLine(DisplayConstants.TotalStatisticsFormat, iterations, totalLivingCells);
                 Console.WriteLine();
 
                 var displayGames = games.Skip(startIndex).Take(gamesPerPage).ToList();
