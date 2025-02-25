@@ -60,5 +60,53 @@ namespace GameOfLife
                 throw;
             }
         }
+
+        /// <summary>
+        /// Saves all parallel games to a single file.
+        /// </summary>
+        public void SaveParallelGames(List<IEngine> games)
+        {
+            try
+            {
+                var saveData = new ParallelSaveData
+                {
+                    Games = games.Select(g => new GameState
+                    {
+                        Field = g.Field,
+                        IterationCount = g.IterationCount,
+                        Size = g.Field.GetLength(0)
+                    }).ToList()
+                };
+
+                string filePath = Path.Combine(FileConstants.SaveFolder,
+                    string.Format(FileConstants.ParallelSaveFileNameFormat, DateTime.Now));
+
+                string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
+                File.WriteAllText(filePath, json);
+
+                Console.WriteLine(DisplayConstants.AllGamesSaved);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving parallel games: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Loads all parallel games from a save file.
+        /// </summary>
+        public ParallelSaveData LoadParallelGames(string filePath)
+        {
+            try
+            {
+                string json = File.ReadAllText(filePath);
+                return JsonConvert.DeserializeObject<ParallelSaveData>(json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading parallel games: {ex.Message}");
+                throw;
+            }
+        }
     }
 }

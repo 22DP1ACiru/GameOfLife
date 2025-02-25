@@ -13,19 +13,25 @@ namespace GameOfLife
     public class ParallelGameManager
     {
         private readonly ConsoleRenderer renderer;
+        private readonly SaveManager saver;
+
         private readonly List<IEngine> games = new List<IEngine>();
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
         private readonly object syncLock = new object();
+        private readonly object pauseLock = new object();
+
         private readonly int totalGames;
         private readonly int gamesPerPage;
         private int currentPage = 0;
         private int multiGamePage = 0;
-        private int multiGamesPerPage = 5;
         private bool inMultiGameView = false;
+
         private bool isPaused = false;
-        private readonly object pauseLock = new object();
+
         private long iterations = 0;
         private long totalLivingCells = 0;
+        private long activeGamesCount;
 
         /// <summary>
         /// Initializes a new instance of the ParallelGameManager class.
@@ -33,9 +39,10 @@ namespace GameOfLife
         /// <param name="renderer">The console renderer instance used for display.</param>
         /// <param name="totalGames">The total number of games to simulate.</param>
         /// <param name="gamesPerPage">The number of games to display per page.</param>
-        public ParallelGameManager(ConsoleRenderer renderer, int totalGames = 1000, int gamesPerPage = 10)
+        public ParallelGameManager(ConsoleRenderer renderer, SaveManager saver, int totalGames = GameConstants.DefaultTotalParallelGames, int gamesPerPage = GameConstants.DefaultGamesPerPage)
         {
             this.renderer = renderer;
+            this.saver = saver;
             this.totalGames = totalGames;
             this.gamesPerPage = gamesPerPage;
             InitializeGames();
@@ -129,54 +136,45 @@ namespace GameOfLife
 
         private void SaveAllGames()
         {
-            try
-            {
-                var saveData = new ParallelSaveData
-                {
-                    Games = games.Select(g => new GameState
-                    {
-                        Field = g.Field,
-                        IterationCount = g.IterationCount,
-                        Size = g.Field.GetLength(0)
-                    }).ToList()
-                };
-
-                string filePath = Path.Combine(FileConstants.SaveFolder,
-                    string.Format(FileConstants.ParallelSaveFileNameFormat, DateTime.Now));
-
-                string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
-                File.WriteAllText(filePath, json);
-
-                Console.WriteLine(DisplayConstants.AllGamesSaved);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error saving games: {ex.Message}");
-            }
+            saver.SaveParallelGames(games);
         }
 
-        private void LoadAllGames()
+        public void LoadAllGames(string filePath = null)
         {
             try
             {
-                string[] saveFiles = Directory.GetFiles(FileConstants.SaveFolder, "parallel_save_*.json");
-                if (saveFiles.Length == 0)
+                if (filePath == null)
                 {
-                    Console.WriteLine(DisplayConstants.NoSavedGamesFound);
-                    return;
+                    string[] saveFiles = Directory.GetFiles(FileConstants.SaveFolder, "parallel_save_*.json");
+                    if (saveFiles.Length == 0)  
+                    {
+                        Console.WriteLine(DisplayConstants.NoSavedGamesFound);
+                        return;
+                    }
+                    filePath = saveFiles.OrderByDescending(f => f).First();
                 }
 
-                // Load the most recent save
-                string filePath = saveFiles.OrderByDescending(f => f).First();
-                string json = File.ReadAllText(filePath);
-                var saveData = JsonConvert.DeserializeObject<ParallelSaveData>(json);
+                var saveData = saver.LoadParallelGames(filePath);
 
                 games.Clear();
+                totalLivingCells = 0;
+                iterations = 0;
+                activeGamesCount = totalGames;
+
                 foreach (var gameState in saveData.Games)
                 {
                     IGame game = new Game(gameState.Size);
+                    game.LoadFromState(gameState);
                     IEngine engine = new Engine(game, gameState.IterationCount);
                     games.Add(engine);
+                    totalLivingCells += engine.LivingCellCount;
+
+                    if (engine.LivingCellCount == 0)
+                    {
+                        activeGamesCount--;
+                    }
+
+                    iterations = Math.Max(iterations, gameState.IterationCount);
                 }
 
                 Console.WriteLine(DisplayConstants.AllGamesLoaded);
@@ -200,11 +198,18 @@ namespace GameOfLife
                     if (!isPaused)
                     {
                         totalLivingCells = 0;
+                        activeGamesCount = totalGames;
+
                         // Update all games in parallel if unpaused
                         Parallel.ForEach(games, game =>
                         {
                             game.UpdateGameState();
                             Interlocked.Add(ref totalLivingCells, game.LivingCellCount);
+
+                            if (game.LivingCellCount == 0)
+                            {
+                                Interlocked.Decrement(ref activeGamesCount);
+                            }
                         });
                         iterations++;
                     }
@@ -235,7 +240,7 @@ namespace GameOfLife
                 Console.WriteLine(DisplayConstants.NavigationInstructions);
                 Console.WriteLine(DisplayConstants.ParallelGameControls);
                 Console.WriteLine();
-                Console.WriteLine(DisplayConstants.TotalStatisticsFormat, iterations, totalLivingCells);
+                Console.WriteLine(DisplayConstants.TotalStatisticsFormat, iterations, totalLivingCells, activeGamesCount, totalGames);
                 Console.WriteLine();
 
                 var displayGames = games.Skip(startIndex).Take(gamesPerPage).ToList();
@@ -293,14 +298,14 @@ namespace GameOfLife
                         case ConsoleKey.N:
                             lock (syncLock)
                             {
-                                int totalPages = (int)Math.Ceiling((double)totalGames / multiGamesPerPage);
+                                int totalPages = (int)Math.Ceiling((double)totalGames / GameConstants.MultiGamesPerPage);
                                 multiGamePage = (multiGamePage + 1) % totalPages;
                             }
                             break;
                         case ConsoleKey.P:
                             lock (syncLock)
                             {
-                                int totalPages = (int)Math.Ceiling((double)totalGames / multiGamesPerPage);
+                                int totalPages = (int)Math.Ceiling((double)totalGames / GameConstants.MultiGamesPerPage);
                                 multiGamePage = (multiGamePage - 1 + totalPages) % totalPages;
                             }
                             break;
@@ -331,12 +336,12 @@ namespace GameOfLife
             while (!cancellationToken.IsCancellationRequested)
             {
                 // Get games from the current multi-game page
-                int startIndex = multiGamePage * multiGamesPerPage;
+                int startIndex = multiGamePage * GameConstants.MultiGamesPerPage;
                 List<IEngine> displayGames = new List<IEngine>();
                 List<int> gameIds = new List<int>();
 
                 // Get up to 5 games for current page
-                for (int i = 0; i < multiGamesPerPage; i++)
+                for (int i = 0; i < GameConstants.MultiGamesPerPage; i++)
                 {
                     int gameIndex = startIndex + i;
                     if (gameIndex < totalGames)
@@ -351,14 +356,14 @@ namespace GameOfLife
                     Console.Clear();
 
                     // Display pagination info
-                    int totalPages = (int)Math.Ceiling((double)totalGames / multiGamesPerPage);
+                    int totalPages = (int)Math.Ceiling((double)totalGames / GameConstants.MultiGamesPerPage);
                     Console.WriteLine(DisplayConstants.MultiGameDisplayHeader);
                     Console.WriteLine($"Page {multiGamePage + 1} of {totalPages}");
                     Console.WriteLine(DisplayConstants.MultiGameNavigationInstructions);
                     Console.WriteLine();
 
                     // Split games for display layout
-                    int topRowCount = Math.Min(3, displayGames.Count);
+                    int topRowCount = Math.Min(GameConstants.MultiGameTopRowCount, displayGames.Count);
                     int bottomRowCount = displayGames.Count - topRowCount;
 
                     // Display top row
@@ -371,13 +376,8 @@ namespace GameOfLife
                         );
                     }
 
-                    // Display section divider if we have games for both rows
                     if (bottomRowCount > 0)
                     {
-                        Console.WriteLine();
-                        Console.WriteLine(DisplayConstants.SectionDivider);
-                        Console.WriteLine();
-
                         // Display bottom row
                         renderer.RenderMultipleGames(
                             displayGames.Skip(topRowCount).Take(bottomRowCount).ToList(),
@@ -387,7 +387,7 @@ namespace GameOfLife
                     }
                 }
 
-                Thread.Sleep(GameConstants.MultiGameUpdateSpeed);
+                Thread.Sleep(GameConstants.ParallelGameUpdateSpeed);
             }
         }
     }

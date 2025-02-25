@@ -9,7 +9,7 @@
             ConsoleRenderer renderer = new ConsoleRenderer();
             SaveManager saver = new SaveManager();
             GameManager gameManager = new GameManager(renderer, saver);
-            GameMenuManager menuManager = new GameMenuManager(gameManager, renderer);
+            GameMenuManager menuManager = new GameMenuManager(gameManager, renderer, saver);
 
             menuManager.ShowMainMenu();
         }

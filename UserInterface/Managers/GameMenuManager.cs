@@ -7,11 +7,13 @@ namespace GameOfLife
     {
         private readonly GameManager gameManager;
         private readonly ConsoleRenderer renderer;
+        private readonly SaveManager saver;
 
-        public GameMenuManager(GameManager gameManager, ConsoleRenderer renderer)
+        public GameMenuManager(GameManager gameManager, ConsoleRenderer renderer, SaveManager saver)
         {
             this.gameManager = gameManager;
             this.renderer = renderer;
+            this.saver = saver;
         }
 
         public void ShowMainMenu()
@@ -42,7 +44,7 @@ namespace GameOfLife
                             break;
                         case DisplayConstants.MenuOption.StartParallelSimulation:
                             Console.Clear();
-                            ParallelGameManager parallelManager = new ParallelGameManager(renderer);
+                            ParallelGameManager parallelManager = new ParallelGameManager(renderer, saver);
                             parallelManager.StartParallelSimulation();
                             break;
                         case DisplayConstants.MenuOption.Quit:
@@ -106,10 +108,22 @@ namespace GameOfLife
             if (int.TryParse(Console.ReadLine(), out int selectedIndex) && selectedIndex > 0 && selectedIndex <= saveFiles.Length)
             {
                 string filePath = saveFiles[selectedIndex - 1];
-                IGame game = new Game(1); // Temporary size to be overwritten by LoadGame
-                int iterationCount = game.LoadGame(filePath);
-                IEngine engine = new Engine(game, iterationCount);
-                gameManager.StartGame(engine, GameConstants.GameUpdateSpeed);
+
+
+                if (saver.IsParallelSave(filePath))
+                {
+                    // Load parallel games
+                    ParallelGameManager parallelManager = new ParallelGameManager(renderer, saver);
+                    parallelManager.LoadAllGames(filePath);
+                    parallelManager.StartParallelSimulation();
+                }
+                else
+                {
+                    IGame game = new Game(1); // Temporary size to be overwritten by LoadGame
+                    int iterationCount = game.LoadGame(filePath);
+                    IEngine engine = new Engine(game, iterationCount);
+                    gameManager.StartGame(engine, GameConstants.GameUpdateSpeed);
+                }
             }
             else
             {

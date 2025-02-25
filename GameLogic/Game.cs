@@ -124,5 +124,15 @@ namespace GameOfLife
             // Return the iteration count
             return saveData.IterationCount;
         }
+
+        /// <summary>
+        /// Loads a game state from memory.
+        /// </summary>
+        /// <param name="state"></param>
+        public void LoadFromState(GameState state)
+        {
+            this.size = state.Size;
+            this.field = state.Field;
+        }
     }
 }
