@@ -24,5 +24,11 @@
         /// <param name="filePath">The path to the save file.</param>
         /// <returns>The iteration count from the save file.</returns>
         int LoadGame(string filePath);
+
+        /// <summary>
+        /// Loads a game state from memory.
+        /// </summary>
+        /// <param name="state"></param>
+        void LoadFromState(GameState state);
     }
 }
