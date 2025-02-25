@@ -37,7 +37,7 @@ namespace GameOfLife
         /// <summary>
         /// Number of games to display per page in multi-game view.
         /// </summary>
-        public const int MultiGamesPerPage = 5;
+        public const int MultiGamesPerPage = 8;
 
         /// <summary>
         /// Maximum number of games to display in the top row of multi-game view.
